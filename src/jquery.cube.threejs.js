@@ -48,14 +48,20 @@ $.fn.cube = function(options) {
             0x00ff00, //back
 			0x000000 //cube color
         ],
+		scramble:"",
+		greyed:[],
         background: 0x1D1F20,
         animation: {
-            delay: 250
+            delay: 500
         },
         onTurn: $.noop,
         onComplete: $.noop
     }, options);
 
+	//Set delay
+	_ref.setDelay = function(delay) {
+		options.animation.delay = delay;
+	}
 	//method for resetting the cube back to its default state
 	_ref.reset = function(){
 
@@ -762,17 +768,27 @@ $.fn.cube = function(options) {
 
 		return texture;
 	}
-
+	////////////////////////////////////////////////////////////////// MODIF ICI
     //method for creating the cubit
-    function createCubit(point){
-
+    function createCubit(point,index){
+		var greyed = false;
+		
+		if ( $.inArray(index,options.greyed) != -1) {
+			greyed = true;				
+			}
+		
         //create cubit face material
         var materials = [];
         for(var i=0; i<6; i++){
-
-            var color = options.color[i];
+			
+			if (greyed == false) {
+				var color = options.color[i];
+			}else {
+				var color = 0xb1b1b1;
+			}
+            
 			var texture = colorFaceTexture(32, 32, color);
-
+			
             var m = new THREE.MeshBasicMaterial(
 				{
 					map: texture,
@@ -809,7 +825,9 @@ $.fn.cube = function(options) {
 
     //method for creating the cube
     function createCube(){
-
+		// Variable compteur pour la c=selection des cubit grisés
+		var index = 0;
+		
         //determine individual cubit sizes divided by
         //overall cube width and height
         options.cubit = {
@@ -831,18 +849,22 @@ $.fn.cube = function(options) {
         for(var iz=0; iz<options.type; iz++){
             for(var iy=0; iy<options.type; iy++){
                 for(var ix=0; ix<options.type; ix++){
-
+					
                     point.x = options.cubit.width * (ix - run) + offset;
                     point.y = options.cubit.height * (iy - run) + offset;
                     point.z = options.cubit.height * (iz - run) + offset;
 
-                    var cubit = createCubit(point);
+                    var cubit = createCubit(point,index);
 
                     //optimize non visible cubits
                     if(ix > 0 && ix < options.type-1 &&
                        iy > 0 && iy < options.type-1 &&
                        iz > 0 && iz < options.type-1)
                         cubit.visible = false;
+					
+					////////////////////////////////////////////////////////////////// MODIF ICI
+					index++;
+					
                 }
             }
 
@@ -1100,6 +1122,16 @@ $.fn.cube = function(options) {
 
         //render
         render();
+		
+		///////////////////////////////////////////////////////////////////////////
+		// Procedure état initial (options scramble)
+		///////////////////////////////////////////////////////////////////////////
+		if(options.scramble != "") {
+			var old_delay = options.animation.delay
+			options.animation.delay = 0;
+			_ref.execute(options.scramble);
+			options.animation.delay = old_delay;
+		}
 
         if(_ref.data("moves")){
             setTimeout(function(){
